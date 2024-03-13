@@ -2,12 +2,13 @@ import Source from 'ol/source/Source';
 import {
   layerDescriptionsToText
 } from './layerDescriptionsToText';
-import { LayerDescription } from './types';
+import { LayerDescription, WMSLayerDetails } from './types';
 import { determineLayerType } from './determineLayerType';
 import { determineSourceType } from './determineSourceType';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
 import VectorSource from 'ol/source/Vector';
+import TileWMS from 'ol/source/TileWMS';
 
 
 let tileLayerBasicDesc: LayerDescription = {
@@ -91,6 +92,43 @@ let vectorLayerFeaturesWithoutNames: LayerDescription = {
   source: determineSourceType(new VectorSource({}))
 };
 
+let singleWmsLayerDesc: LayerDescription = {
+  details: {
+    serviceAbstract: 'Foo Abstract',
+    serviceKeywords: [ 'Service keyword 1', 'Service keyword 2' ],
+    serviceTitle: 'Foo',
+    topLevelLayerAbstract: 'The abstract of layer-number-1',
+    topLevelLayerTitle: 'The title of layer-number-1',
+    wmsLayerNames: [ 'a' ],
+    wmsLayerAbstracts: [ 'The abstract of a' ],
+    wmsLayerTitles: [ 'Title of a' ],
+    wmsLayerMetadataURLs: [
+      'http://www.example.com/metadata/a.xml'
+    ]
+  },
+  type: determineLayerType(new TileLayer()),
+  source: determineSourceType(new TileWMS({params:{}}))
+};
+
+let multiWmsLayerDesc: LayerDescription = {
+  details: {
+    serviceAbstract: 'Foo Abstract',
+    serviceKeywords: [ 'Service keyword 1', 'Service keyword 2' ],
+    serviceTitle: 'Foo',
+    topLevelLayerAbstract: 'The abstract of layer-number-1',
+    topLevelLayerTitle: 'The title of layer-number-1',
+    wmsLayerNames: [ 'a', 'b' ],
+    wmsLayerAbstracts: [ 'The abstract of a', 'The abstract of b' ],
+    wmsLayerTitles: [ 'Title of a', 'Title of b' ],
+    wmsLayerMetadataURLs: [
+      'http://www.example.com/metadata/a.xml',
+      'http://www.example.com/metadata/b.xml'
+    ]
+  },
+  type: determineLayerType(new TileLayer()),
+  source: determineSourceType(new TileWMS({params:{}}))
+};
+
 describe('layerDescriptionsToText', () => {
   test('describes a very basic tile layer', () => {
     let descriptions: LayerDescription[] = [
@@ -164,6 +202,97 @@ describe('layerDescriptionsToText', () => {
     expect(text).toMatch(/1 layer./);
     expect(text).toMatch(/'scribble'/);
     expect(text).not.toMatch(/(named|with name)/);
+  });
+  test('describes details for single wms layer', () => {
+    let descriptions: LayerDescription[] = [
+      singleWmsLayerDesc
+    ];
+    let got: string[] = layerDescriptionsToText(descriptions);
+
+    let text = got.join('');
+    expect(text).not.toMatch(/composition/);
+    expect(text).toMatch(/"a" \(/);
+    expect(text).toMatch(/title: "Title of a"/);
+    expect(text).toMatch(/abstract: "The abstract of a"/);
+  });
+  test('describes details for multi wms layer', () => {
+    let descriptions: LayerDescription[] = [
+      multiWmsLayerDesc
+    ];
+    let got: string[] = layerDescriptionsToText(descriptions);
+    let text = got.join('');
+
+    expect(text).toMatch(/composition of 2/);
+    expect(text).toMatch(/"a" \(/);
+    expect(text).toMatch(/title: "Title of a"/);
+    expect(text).toMatch(/abstract: "The abstract of a"/);
+    expect(text).toMatch(/"b" \(/);
+    expect(text).toMatch(/title: "Title of b"/);
+    expect(text).toMatch(/abstract: "The abstract of b"/);
+  });
+  test('describes details for wms layers, but without redundancy 1', () => {
+    // adjust singleWmsLayerDesc, so that infos are less perfect
+    let clonedDesc = Object.assign({}, singleWmsLayerDesc) as LayerDescription;
+    (clonedDesc.details as WMSLayerDetails).wmsLayerAbstracts = ['a']; // same as name
+    (clonedDesc.details as WMSLayerDetails).wmsLayerTitles = ['a']; // same as name
+
+    let descriptions: LayerDescription[] = [
+      clonedDesc
+    ];
+    let got: string[] = layerDescriptionsToText(descriptions);
+    let text = got.join('');
+    expect(text).not.toMatch(/composition/);
+    expect(text).toMatch(/"a"/);
+    expect(text).not.toMatch(/"a" \(/);
+    expect(text).not.toMatch(/title: /);
+    expect(text).not.toMatch(/abstract: /);
+  });
+  test('describes details for wms layers, but without redundancy 2', () => {
+    // adjust singleWmsLayerDesc, so that infos are less perfect
+    let clonedDesc = Object.assign({}, singleWmsLayerDesc) as LayerDescription;
+    (clonedDesc.details as WMSLayerDetails).wmsLayerAbstracts = ['Humba']; // same as title
+    (clonedDesc.details as WMSLayerDetails).wmsLayerTitles = ['Humba']; // same as abstract
+
+    let descriptions: LayerDescription[] = [
+      clonedDesc
+    ];
+    let got: string[] = layerDescriptionsToText(descriptions);
+    let text = got.join('');
+    expect(text).not.toMatch(/composition/);
+    expect(text).toMatch(/"a" \(/);
+    expect(text).not.toMatch(/title: /);
+    expect(text).toMatch(/title\/abstract: /);
+  });
+  test('describes details for wms layers, handling empty infos 1', () => {
+    // adjust singleWmsLayerDesc, so that infos are less perfect
+    let clonedDesc = Object.assign({}, singleWmsLayerDesc) as LayerDescription;
+    (clonedDesc.details as WMSLayerDetails).wmsLayerAbstracts = ['']; // no abstract
+
+    let descriptions: LayerDescription[] = [
+      clonedDesc
+    ];
+    let got: string[] = layerDescriptionsToText(descriptions);
+    let text = got.join('');
+    expect(text).not.toMatch(/composition/);
+    expect(text).toMatch(/"a" \(/);
+    expect(text).toMatch(/title: /);
+    expect(text).not.toMatch(/abstract: /);
+  });
+
+  test('describes details for wms layers, handling empty infos 1', () => {
+    // adjust singleWmsLayerDesc, so that infos are less perfect
+    let clonedDesc = Object.assign({}, singleWmsLayerDesc) as LayerDescription;
+    (clonedDesc.details as WMSLayerDetails).wmsLayerTitles = ['']; // no title
+
+    let descriptions: LayerDescription[] = [
+      clonedDesc
+    ];
+    let got: string[] = layerDescriptionsToText(descriptions);
+    let text = got.join('');
+    expect(text).not.toMatch(/composition/);
+    expect(text).toMatch(/"a" \(/);
+    expect(text).not.toMatch(/title: /);
+    expect(text).toMatch(/abstract: /);
   });
 });
 
