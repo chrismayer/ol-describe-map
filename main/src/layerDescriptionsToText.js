@@ -4,7 +4,7 @@ exports.layerDescriptionsToText = void 0;
 var util_1 = require("./util");
 /**
  *
- * @param layerDescs LayerDescription[] Desciptions of layers.
+ * @param layerDescs LayerDescription[] Descriptions of layers.
  * @returns string[]
  */
 var layerDescriptionsToText = function (layerDescs) {
@@ -22,6 +22,10 @@ var layerDescriptionsToText = function (layerDescs) {
         if (layerDesc.source === 'Vector') {
             parts = vectorLayersDetailsToText(layerDesc, parts);
         }
+        // add WMS details to textual description
+        if (layerDesc.source === 'TileWMS' || layerDesc.source === 'ImageWMS') {
+            parts = wmsLayersDetailsToText(layerDesc, parts);
+        }
         if (idx === 0 && layerDescs.length > 1) {
             parts.push('This layer is the lowest in the drawing order, other layers are drawn atop of it. ');
         }
@@ -32,6 +36,47 @@ var layerDescriptionsToText = function (layerDescs) {
     return parts;
 };
 exports.layerDescriptionsToText = layerDescriptionsToText;
+var wmsLayersDetailsToText = function (layerDesc, parts) {
+    if (layerDesc.details == null) {
+        return parts;
+    }
+    var _a = layerDesc.details, _b = _a.wmsLayerNames, wmsLayerNames = _b === void 0 ? [] : _b, _c = _a.wmsLayerAbstracts, wmsLayerAbstracts = _c === void 0 ? [] : _c, _d = _a.wmsLayerTitles, wmsLayerTitles = _d === void 0 ? [] : _d;
+    var numLayers = wmsLayerNames.length;
+    if (numLayers > 1) {
+        parts.push("This layer is a composition of ".concat(numLayers, " layers, those are: "));
+    }
+    else {
+        parts.push('This layer is named ');
+    }
+    wmsLayerNames.forEach(function (layerName, idx) {
+        var layerTitle = wmsLayerTitles[idx];
+        var layerAbstract = wmsLayerAbstracts[idx];
+        var nameEqualsTitle = layerName === layerTitle;
+        var nameEqualsAbstract = layerName === layerAbstract;
+        var titleEqualsAbstract = layerTitle === layerAbstract;
+        var details = [];
+        if (nameEqualsTitle && nameEqualsAbstract) {
+            // no details needed
+        }
+        else if (titleEqualsAbstract) {
+            details.push("title/abstract: \"".concat(layerTitle, "\""));
+        }
+        else {
+            if (layerTitle) {
+                details.push("title: \"".concat(layerTitle, "\""));
+            }
+            if (wmsLayerAbstracts[idx]) {
+                details.push("abstract: \"".concat(layerAbstract, "\""));
+            }
+        }
+        parts.push("\"".concat(layerName, "\""));
+        if (details.length > 0) {
+            parts.push(" (".concat(details.join(', '), ")"));
+        }
+        parts.push(idx < numLayers - 1 ? ', ' : '. ');
+    });
+    return parts;
+};
 var vectorLayersDetailsToText = function (layerDesc, parts) {
     if (layerDesc.details == null) {
         return parts;

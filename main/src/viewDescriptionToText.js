@@ -68,7 +68,9 @@ var viewDescriptionToText = function (viewDesc) {
         parts.push("i.e. the lower left point is at ".concat((0, util_1.formatCoordinate)((_a = epsg4326.bbox) === null || _a === void 0 ? void 0 : _a[0], (_b = epsg4326.bbox) === null || _b === void 0 ? void 0 : _b[1])));
         parts.push(", the upper right is at ".concat((0, util_1.formatCoordinate)((_c = epsg4326.bbox) === null || _c === void 0 ? void 0 : _c[2], (_d = epsg4326.bbox) === null || _d === void 0 ? void 0 : _d[3]), ". "));
     }
-    parts.push(rotationToText(rotation));
+    if (viewDesc.rotation !== undefined) {
+        parts.push(rotationToText(rotation));
+    }
     if (viewDesc.scale) {
         parts.push("The map has a scale of roughly 1:".concat((0, util_1.roundTo)(viewDesc.scale, 0).toLocaleString('en-GB'), ". "));
     }

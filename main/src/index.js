@@ -44,6 +44,7 @@ var defaultLayerFilter_1 = __importDefault(require("./defaultLayerFilter"));
 var defaultViewDescriber_1 = __importDefault(require("./defaultViewDescriber"));
 var defaultLayerDescriber_1 = __importDefault(require("./defaultLayerDescriber"));
 var defaultTextualDescriber_1 = __importDefault(require("./defaultTextualDescriber"));
+var util_1 = require("./util");
 /**
  * Describes the passed map according to the passed configuration and returns that
  * description. By default also the 'aria-description' attribute of the map's DOM
@@ -58,21 +59,33 @@ var defaultTextualDescriber_1 = __importDefault(require("./defaultTextualDescrib
 function describe(map, conf) {
     if (conf === void 0) { conf = {}; }
     return __awaiter(this, void 0, void 0, function () {
-        var _a, layerFilter, _b, viewDescriber, _c, layerDescriber, _d, textualDescriber, _e, updateAriaDescription, view, layers, viewDescription, layerDescriptions, textualDescription, targetElement;
+        var finalViewDescriber, finalLayerDescriber, _a, layerFilter, _b, viewDescriber, _c, layerDescriber, _d, textualDescriber, _e, updateAriaDescription, view, layers, viewDescription, layerDescriptions, textualDescription, targetElement;
         var _this = this;
         return __generator(this, function (_f) {
             switch (_f.label) {
                 case 0:
                     _a = conf.layerFilter, layerFilter = _a === void 0 ? defaultLayerFilter_1.default : _a, _b = conf.viewDescriber, viewDescriber = _b === void 0 ? defaultViewDescriber_1.default : _b, _c = conf.layerDescriber, layerDescriber = _c === void 0 ? defaultLayerDescriber_1.default : _c, _d = conf.textualDescriber, textualDescriber = _d === void 0 ? defaultTextualDescriber_1.default : _d, _e = conf.updateAriaDescription, updateAriaDescription = _e === void 0 ? true : _e;
+                    if (viewDescriber == null) {
+                        finalViewDescriber = util_1.voidViewDescriber;
+                    }
+                    else {
+                        finalViewDescriber = viewDescriber;
+                    }
+                    if (layerDescriber == null) {
+                        finalLayerDescriber = util_1.voidLayersDescriber;
+                    }
+                    else {
+                        finalLayerDescriber = layerDescriber;
+                    }
                     view = map.getView();
                     layers = map.getAllLayers().filter(layerFilter);
-                    return [4 /*yield*/, viewDescriber(view)];
+                    return [4 /*yield*/, finalViewDescriber(view)];
                 case 1:
                     viewDescription = _f.sent();
                     return [4 /*yield*/, Promise.all(layers.map(function (layer) { return __awaiter(_this, void 0, void 0, function () {
                             return __generator(this, function (_a) {
                                 switch (_a.label) {
-                                    case 0: return [4 /*yield*/, layerDescriber(layer, view)];
+                                    case 0: return [4 /*yield*/, finalLayerDescriber(layer, view)];
                                     case 1: return [2 /*return*/, _a.sent()];
                                 }
                             });

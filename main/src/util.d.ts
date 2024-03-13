@@ -1,4 +1,5 @@
 import Feature from 'ol/Feature';
+import { ViewDescriberFunc, LayerDescriberFunc } from './types';
 /**
  * Turns a number into a stringified version, i.e. 1 becomes 'first', 22 becomes
  * 'twenty-second'. numbers above 100 are returned as '# 175'.
@@ -78,3 +79,6 @@ export declare const simpleStats: (data: object[], keys: string[], nameAttribute
  *   with a leading space.
  */
 export declare const makePercentInfo: (share?: number | undefined, total?: number | undefined) => string;
+export declare const getWmsResponse: (url: string, params: object) => Promise<string>;
+export declare const voidViewDescriber: ViewDescriberFunc;
+export declare const voidLayersDescriber: LayerDescriberFunc;

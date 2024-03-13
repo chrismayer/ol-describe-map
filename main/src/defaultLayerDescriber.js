@@ -35,8 +35,14 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.defaultLayerDescriber = void 0;
+var ImageWMS_1 = __importDefault(require("ol/source/ImageWMS"));
+var TileWMS_1 = __importDefault(require("ol/source/TileWMS"));
+var WMSCapabilities_js_1 = __importDefault(require("ol/format/WMSCapabilities.js"));
 var determineLayerType_1 = require("./determineLayerType");
 var determineSourceType_1 = require("./determineSourceType");
 var util_1 = require("./util");
@@ -49,22 +55,151 @@ var util_1 = require("./util");
 var defaultLayerDescriber = function (layer, view) { return __awaiter(void 0, void 0, void 0, function () {
     var layerType, source, sourceType, details, desc;
     return __generator(this, function (_a) {
-        layerType = (0, determineLayerType_1.determineLayerType)(layer);
-        source = layer.getSource();
-        sourceType = source == null ? 'unknown' : (0, determineSourceType_1.determineSourceType)(source);
-        details = null;
-        if (sourceType === 'Vector') {
-            details = determineVectorLayerDetails(layer, view);
+        switch (_a.label) {
+            case 0:
+                layerType = (0, determineLayerType_1.determineLayerType)(layer);
+                source = layer.getSource();
+                sourceType = source == null ? 'unknown' : (0, determineSourceType_1.determineSourceType)(source);
+                details = null;
+                if (sourceType === 'Vector') {
+                    details = determineVectorLayerDetails(layer, view);
+                }
+                if (!(sourceType === 'TileWMS')) return [3 /*break*/, 2];
+                return [4 /*yield*/, determineWmsLayerDetails(layer)];
+            case 1:
+                details = _a.sent();
+                _a.label = 2;
+            case 2:
+                if (!(sourceType === 'ImageWMS')) return [3 /*break*/, 4];
+                return [4 /*yield*/, determineWmsLayerDetails(layer)];
+            case 3:
+                details = _a.sent();
+                _a.label = 4;
+            case 4:
+                desc = {
+                    type: layerType,
+                    source: sourceType,
+                    details: details
+                };
+                return [2 /*return*/, desc];
         }
-        desc = {
-            type: layerType,
-            source: sourceType,
-            details: details
-        };
-        return [2 /*return*/, desc];
     });
 }); };
 exports.defaultLayerDescriber = defaultLayerDescriber;
+var reStartsWithHttpOrHttps = /^https?:\/\//gi;
+var ensureAbsoluteUrl = function (u) {
+    if (reStartsWithHttpOrHttps.test(u)) {
+        return u;
+    }
+    var loc = document.location.href;
+    var url = (new URL(u, loc)).href;
+    return url;
+};
+/**
+ *
+ * @param layer
+ * @returns
+ */
+var determineWmsLayerDetails = function (layer) { return __awaiter(void 0, void 0, void 0, function () {
+    var parser, details, source, params, urls, url, responseTxt, json, actualLayers;
+    var _a, _b, _c, _d, _e, _f, _g, _h;
+    return __generator(this, function (_j) {
+        switch (_j.label) {
+            case 0:
+                parser = new WMSCapabilities_js_1.default();
+                details = {};
+                source = layer.getSource();
+                if (source == null) {
+                    return [2 /*return*/, details];
+                }
+                params = source.getParams();
+                if (source instanceof TileWMS_1.default) {
+                    urls = source.getUrls();
+                }
+                else if (source instanceof ImageWMS_1.default) {
+                    urls = [source.getUrl()];
+                }
+                url = urls && urls[0] ? urls[0] : '';
+                if (!url) {
+                    return [2 /*return*/, details];
+                }
+                url = ensureAbsoluteUrl(url);
+                return [4 /*yield*/, (0, util_1.getWmsResponse)(url, {
+                        VERSION: params.VERSION || '1.3.0',
+                        SERVICE: params.SERVICE || 'WMS',
+                        REQUEST: 'GetCapabilities'
+                    })];
+            case 1:
+                responseTxt = _j.sent();
+                json = parser.read(responseTxt);
+                // add service information
+                details.serviceAbstract = (_a = json === null || json === void 0 ? void 0 : json.Service) === null || _a === void 0 ? void 0 : _a.Abstract;
+                details.serviceKeywords = (_b = json === null || json === void 0 ? void 0 : json.Service) === null || _b === void 0 ? void 0 : _b.KeywordList;
+                details.serviceTitle = (_c = json === null || json === void 0 ? void 0 : json.Service) === null || _c === void 0 ? void 0 : _c.Title;
+                // add outermost/embracing layer information
+                details.topLevelLayerAbstract = (_e = (_d = json === null || json === void 0 ? void 0 : json.Capability) === null || _d === void 0 ? void 0 : _d.Layer) === null || _e === void 0 ? void 0 : _e.Abstract;
+                details.topLevelLayerTitle = (_g = (_f = json === null || json === void 0 ? void 0 : json.Capability) === null || _f === void 0 ? void 0 : _f.Layer) === null || _g === void 0 ? void 0 : _g.Title;
+                actualLayers = findLayersByLayerNames((_h = json === null || json === void 0 ? void 0 : json.Capability) === null || _h === void 0 ? void 0 : _h.Layer, params.LAYERS);
+                details.wmsLayerNames = [];
+                details.wmsLayerAbstracts = [];
+                details.wmsLayerTitles = [];
+                details.wmsLayerMetadataURLs = [];
+                actualLayers.forEach(function (actualLayer) {
+                    var _a, _b, _c, _d;
+                    (_a = details.wmsLayerNames) === null || _a === void 0 ? void 0 : _a.push((actualLayer === null || actualLayer === void 0 ? void 0 : actualLayer.Name) || '');
+                    (_b = details.wmsLayerAbstracts) === null || _b === void 0 ? void 0 : _b.push((actualLayer === null || actualLayer === void 0 ? void 0 : actualLayer.Abstract) || '');
+                    (_c = details.wmsLayerTitles) === null || _c === void 0 ? void 0 : _c.push((actualLayer === null || actualLayer === void 0 ? void 0 : actualLayer.Title) || '');
+                    (_d = details.wmsLayerMetadataURLs) === null || _d === void 0 ? void 0 : _d.push(findBestMetadataURL(actualLayer));
+                });
+                return [2 /*return*/, details];
+        }
+    });
+}); };
+/**
+ *
+ * @param layerCapabilities
+ * @returns
+ */
+var findBestMetadataURL = function (layerCapabilities) {
+    var allURLObjects = (layerCapabilities === null || layerCapabilities === void 0 ? void 0 : layerCapabilities.MetadataURL) || [];
+    var preferredFormats = ['text/html', 'html', 'text/xml', 'xml'];
+    var bestUrl = '';
+    var bestScore = -Infinity;
+    allURLObjects.forEach(function (oneUrlObj) {
+        var currFormat = oneUrlObj.Format;
+        var currURL = oneUrlObj.OnlineResource;
+        var indexOfCurrFormat = preferredFormats.findIndex(function (entry) { return entry === currFormat; });
+        var currScore = indexOfCurrFormat < 0
+            ? indexOfCurrFormat
+            : preferredFormats.length - indexOfCurrFormat;
+        if (currScore > bestScore) {
+            bestUrl = currURL;
+            bestScore = currScore;
+        }
+    });
+    return bestUrl;
+};
+/**
+ *
+ * @param capabilityLayer
+ * @param layersParam
+ * @returns
+ */
+var findLayersByLayerNames = function (capabilityLayer, layersParam, addTo) {
+    if (addTo === void 0) { addTo = []; }
+    var layerNames = (layersParam || '').split(',');
+    var jsonLayers = capabilityLayer === null || capabilityLayer === void 0 ? void 0 : capabilityLayer.Layer;
+    var found = addTo;
+    jsonLayers === null || jsonLayers === void 0 ? void 0 : jsonLayers.forEach(function (jsonLayer) {
+        if (layerNames.includes(jsonLayer.Name)) {
+            found.push(jsonLayer);
+        }
+        if (jsonLayer.Layer) {
+            found = findLayersByLayerNames(jsonLayer, layersParam, found);
+        }
+    });
+    return found;
+};
 /**
  * Determines details for the passed vector layer and current Map view.
  * @param layer
