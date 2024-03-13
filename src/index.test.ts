@@ -66,5 +66,16 @@ describe('describe function', () => {
       expect(description.layers?.[0].type).toStrictEqual('unknown');
     });
   });
+  test('disabling viewDescriber', async () => {
+    let description = await describeOlMap(map, {viewDescriber: null});
+    let emptyViewDescription = {};
+    expect(description.view).toStrictEqual(emptyViewDescription);
+  });
+  test('disabling layerDescriber', async () => {
+    let description = await describeOlMap(map, {layerDescriber: null});
+    let emptyLayerDescription = {details: null, source: '', type: ''};
+    let expected = [emptyLayerDescription, emptyLayerDescription];
+    expect(description.layers).toStrictEqual(expected);
+  });
 });
 
