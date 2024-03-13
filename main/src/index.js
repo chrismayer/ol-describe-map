@@ -56,11 +56,11 @@ var util_1 = require("./util");
  *   should directly be updated.
  * @returns MapDescription A map description object.
  */
-function describe(map, conf) {
-    if (conf === void 0) { conf = {}; }
-    return __awaiter(this, void 0, void 0, function () {
+function describe(map_1) {
+    return __awaiter(this, arguments, void 0, function (map, conf) {
         var finalViewDescriber, finalLayerDescriber, _a, layerFilter, _b, viewDescriber, _c, layerDescriber, _d, textualDescriber, _e, updateAriaDescription, view, layers, viewDescription, layerDescriptions, textualDescription, targetElement;
         var _this = this;
+        if (conf === void 0) { conf = {}; }
         return __generator(this, function (_f) {
             switch (_f.label) {
                 case 0:

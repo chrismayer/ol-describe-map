@@ -35,16 +35,29 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
+var __spreadArray = (this && this.__spreadArray) || function (to, from, pack) {
+    if (pack || arguments.length === 2) for (var i = 0, l = from.length, ar; i < l; i++) {
+        if (ar || !(i in from)) {
+            if (!ar) ar = Array.prototype.slice.call(from, 0, i);
+            ar[i] = from[i];
+        }
+    }
+    return to.concat(ar || Array.prototype.slice.call(from));
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.nominatimTextualDescriber = void 0;
 var layerDescriptionsToText_1 = require("./layerDescriptionsToText");
 var util_1 = require("./util");
-var reverseGeocode = function (lon, lat, zoom) {
-    if (lon === void 0) { lon = 0; }
-    if (lat === void 0) { lat = 0; }
-    if (zoom === void 0) { zoom = 0; }
-    return __awaiter(void 0, void 0, void 0, function () {
+var reverseGeocode = function () {
+    var args_1 = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args_1[_i] = arguments[_i];
+    }
+    return __awaiter(void 0, __spreadArray([], args_1, true), void 0, function (lon, lat, zoom) {
         var result, nominatimUrl, resp, data;
+        if (lon === void 0) { lon = 0; }
+        if (lat === void 0) { lat = 0; }
+        if (zoom === void 0) { zoom = 0; }
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
