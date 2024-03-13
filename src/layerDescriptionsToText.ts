@@ -12,7 +12,7 @@ import {
 
 /**
  *
- * @param layerDescs LayerDescription[] Desciptions of layers.
+ * @param layerDescs LayerDescription[] Descriptions of layers.
  * @returns string[]
  */
 export const layerDescriptionsToText = (layerDescs: LayerDescription[]): string[] => {

@@ -2,13 +2,20 @@ import Feature from 'ol/Feature';
 import Map from 'ol/Map';
 import View from 'ol/View';
 import Point from 'ol/geom/Point';
+import ImageLayer from 'ol/layer/Image';
 import Layer from 'ol/layer/Layer';
 import TileLayer from 'ol/layer/Tile';
 import VectorLayer from 'ol/layer/Vector';
+import ImageWMS from 'ol/source/ImageWMS';
 import OSM from 'ol/source/OSM';
+import TileWMS from 'ol/source/TileWMS';
 import VectorSource from 'ol/source/Vector';
 
-import { VectorLayerDetails } from './types';
+import { fetchSpy, successResponse } from './fetchSpy';
+import { readFileSync } from 'fs';
+import * as path from 'path';
+
+import { VectorLayerDetails, WMSLayerDetails } from './types';
 import {
   defaultLayerDescriber
 } from './defaultLayerDescriber';
@@ -18,6 +25,11 @@ let map;
 let view;
 let tileLayer;
 let vectorLayer;
+let tilewms;
+let imagewms;
+
+const capaFile = path.join(__dirname, '..', 'testdata', 'capabilites-example.xml');
+const capaXML = readFileSync(capaFile).toString();
 
 describe('defaultLayerDescriber', () => {
   beforeEach(() => {
@@ -36,6 +48,23 @@ describe('defaultLayerDescriber', () => {
     }));
     vectorLayer = new VectorLayer({
       source: vectorSource
+    });
+
+    tilewms = new TileLayer({
+      source: new TileWMS({
+        url: 'some-url',
+        params: {
+          LAYERS: 'layer-number-1-1-2'
+        }
+      })
+    });
+    imagewms = new ImageLayer({
+      source: new ImageWMS({
+        url: 'some-other-url',
+        params: {
+          LAYERS: 'a,b,c'
+        }
+      })
     });
 
     view = new View({
@@ -62,7 +91,7 @@ describe('defaultLayerDescriber', () => {
     expect(got.source).toStrictEqual('unknown');
   });
 
-  test('describes a tile layer', async () => {
+  test('describes a tile layer with OSM source', async () => {
     let got = await defaultLayerDescriber(tileLayer, view);
     expect(got.source).toStrictEqual('OpenStreetMap');
   });
@@ -88,5 +117,27 @@ describe('defaultLayerDescriber', () => {
     expect(details.numFeaturesInExtent).toBe(0);
     expect(details.numRenderedFeaturesInExtent).toBe(0);
     expect(details.numSkippedFeaturesInExtent).toBe(0);
+  });
+
+  test('describes a tiled WMS layer', async () => {
+    const mockResponse = successResponse(capaXML);
+    fetchSpy(mockResponse);
+
+    let got = await defaultLayerDescriber(tilewms, view);
+    expect(got.source).toStrictEqual('TileWMS');
+    expect(got.details).not.toBeNull();
+    const details = got.details as WMSLayerDetails;
+    expect(details.serviceAbstract).toBe('Foo Abstract');
+  });
+
+  test('describes a single tile WMS layer (image)', async () => {
+    const mockResponse = successResponse(capaXML);
+    fetchSpy(mockResponse);
+
+    let got = await defaultLayerDescriber(imagewms, view);
+    expect(got.source).toStrictEqual('ImageWMS');
+    expect(got.details).not.toBeNull();
+    const details = got.details as WMSLayerDetails;
+    expect(details.serviceAbstract).toBe('Foo Abstract');
   });
 });

@@ -54,6 +54,16 @@ export const defaultLayerDescriber: LayerDescriberFunc = async (layer: Layer, vi
   return desc;
 };
 
+const reStartsWithHttpOrHttps = /^https?:\/\//gi;
+const ensureAbsoluteUrl = (u: string) => {
+  if (reStartsWithHttpOrHttps.test(u)) {
+    return u;
+  }
+  let loc = document.location.href;
+  let url = (new URL(u, loc)).href;
+  return url;
+};
+
 /**
  *
  * @param layer
@@ -78,6 +88,8 @@ const determineWmsLayerDetails = async (layer: TileLayer<TileWMS> | ImageLayer<I
   if (!url) {
     return details;
   }
+
+  url = ensureAbsoluteUrl(url);
 
   let responseTxt = await getPossiblyCachedWmsResponse(url, {
     VERSION: params.VERSION || '1.3.0',
@@ -150,7 +162,7 @@ const findLayersByLayerNames = (capabilityLayer: any, layersParam: string, addTo
   let layerNames = (layersParam || '').split(',');
   let jsonLayers: Array<any> = capabilityLayer?.Layer;
   let found: any = addTo;
-  jsonLayers.forEach(jsonLayer => {
+  jsonLayers?.forEach(jsonLayer => {
     if (layerNames.includes(jsonLayer.Name)) {
       found.push(jsonLayer);
     }
